@@ -1,0 +1,84 @@
+import { db } from '../config/database';
+import { contacts } from '../../db/schema';
+import { eq } from 'drizzle-orm';
+import { v2 as cloudinary } from 'cloudinary';
+
+// Cloudinary Configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export const contactService = {
+  // 1. Create a new contact (Text Only - No Images yet)
+  async createContact(data: {
+    name: string;
+    phone: string;
+    nicheId: number;
+    socialLink: string;
+    notes?: string;
+  }) {
+    // FIX: Removed 'screenshotUrl' because it no longer exists in schema
+    const [result] = await db.insert(contacts).values({
+      name: data.name,
+      phoneNumber: data.phone,
+      nicheId: data.nicheId,
+      socialLink: data.socialLink,
+      notes: data.notes,
+      // Status defaults to 'pending'
+    });
+
+    // Fetch and return the newly created contact
+    const newContact = await db.select()
+      .from(contacts)
+      .where(eq(contacts.id, result.insertId));
+      
+    return newContact[0];
+  },
+
+  // 2. Update Outreach Assets (Images + Captions)
+  async updateOutreachAssets(contactId: number, data: {
+    msg1_text?: string; path1?: string;
+    msg2_text?: string; path2?: string;
+    msg3_text?: string; path3?: string;
+  }) {
+    const updateData: any = {
+      msg1_text: data.msg1_text,
+      msg2_text: data.msg2_text,
+      msg3_text: data.msg3_text,
+    };
+
+    // Upload images to Cloudinary if they exist
+    if (data.path1) {
+      const res = await cloudinary.uploader.upload(data.path1, { folder: 'outreach' });
+      updateData.msg1_image = res.secure_url;
+    }
+    if (data.path2) {
+      const res = await cloudinary.uploader.upload(data.path2, { folder: 'outreach' });
+      updateData.msg2_image = res.secure_url;
+    }
+    if (data.path3) {
+      const res = await cloudinary.uploader.upload(data.path3, { folder: 'outreach' });
+      updateData.msg3_image = res.secure_url;
+    }
+
+    // Update the record
+    await db.update(contacts)
+      .set(updateData)
+      .where(eq(contacts.id, contactId));
+
+    // Return updated record
+    return await db.select().from(contacts).where(eq(contacts.id, contactId)).then(res => res[0]);
+  },
+
+  // 3. Get all contacts
+  async getAllContacts() {
+    return await db.select().from(contacts);
+  },
+
+  // 4. Get contacts by Niche
+  async getContactsByNiche(nicheId: number) {
+    return await db.select().from(contacts).where(eq(contacts.nicheId, nicheId));
+  }
+};

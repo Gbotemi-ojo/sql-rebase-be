@@ -1,20 +1,14 @@
-// src/routes/index.ts
 import { Router } from 'express';
-import businessRoutes from './business.routes';
-import categoryRoutes from './category.routes';
+import contactRoutes from './contact.routes';
+import nicheRoutes from './niche.routes'; // Import this
 
 const router = Router();
 
-// Health Check Endpoint
 router.get("/health", (req, res) => {
-  res.json({ message: "Business API is healthy and running!" });
+  res.json({ message: "Outreach API is healthy!" });
 });
 
-// Mount the business routes under the '/businesses' path
-router.use('/businesses', businessRoutes);
-router.use('/categories', categoryRoutes);
-
-// You can add other route modules here in the future
-// For example: router.use('/users', userRoutes);
+router.use('/contacts', contactRoutes);
+router.use('/niches', nicheRoutes); // Mount this
 
 export default router;
