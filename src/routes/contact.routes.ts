@@ -4,16 +4,16 @@ import { createContact, getContacts, updateOutreach } from '../controllers/conta
 
 const router = Router();
 
-// FIX: Change destination to '/tmp' for Vercel/Serverless support
+// FIX: Vercel only allows writing to '/tmp' directory
 const upload = multer({ dest: '/tmp' });
 
-// 1. Create Lead
+// 1. Create Lead (Text Only)
 router.post('/', createContact);
 
 // 2. Get Leads
 router.get('/', getContacts);
 
-// 3. Upload Outreach Assets
+// 3. Upload Outreach Assets (Images + Captions)
 const uploadFields = upload.fields([
   { name: 'img1', maxCount: 1 },
   { name: 'img2', maxCount: 1 },

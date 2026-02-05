@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import contactRoutes from './contact.routes';
-import nicheRoutes from './niche.routes'; // Import this
+import nicheRoutes from './niche.routes'; // Ensure this file exists from previous steps
 
 const router = Router();
 
@@ -9,6 +9,6 @@ router.get("/health", (req, res) => {
 });
 
 router.use('/contacts', contactRoutes);
-router.use('/niches', nicheRoutes); // Mount this
+router.use('/niches', nicheRoutes);
 
 export default router;

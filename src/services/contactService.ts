@@ -3,7 +3,6 @@ import { contacts } from '../../db/schema';
 import { eq } from 'drizzle-orm';
 import { v2 as cloudinary } from 'cloudinary';
 
-// Cloudinary Configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -11,33 +10,23 @@ cloudinary.config({
 });
 
 export const contactService = {
-  // 1. Create a new contact (Text Only - No Images yet)
-  async createContact(data: {
-    name: string;
-    phone: string;
-    nicheId: number;
-    socialLink: string;
-    notes?: string;
-  }) {
-    // FIX: Removed 'screenshotUrl' because it no longer exists in schema
+  // Create Contact (Text Only)
+  async createContact(data: { name: string; phone: string; nicheId: number; socialLink: string; notes?: string }) {
     const [result] = await db.insert(contacts).values({
       name: data.name,
       phoneNumber: data.phone,
       nicheId: data.nicheId,
       socialLink: data.socialLink,
       notes: data.notes,
-      // Status defaults to 'pending'
+      status: 'pending' 
     });
 
-    // Fetch and return the newly created contact
-    const newContact = await db.select()
-      .from(contacts)
-      .where(eq(contacts.id, result.insertId));
-      
+    // Return the new contact
+    const newContact = await db.select().from(contacts).where(eq(contacts.id, result.insertId));
     return newContact[0];
   },
 
-  // 2. Update Outreach Assets (Images + Captions)
+  // Update Assets (Images)
   async updateOutreachAssets(contactId: number, data: {
     msg1_text?: string; path1?: string;
     msg2_text?: string; path2?: string;
@@ -49,7 +38,7 @@ export const contactService = {
       msg3_text: data.msg3_text,
     };
 
-    // Upload images to Cloudinary if they exist
+    // Upload images to Cloudinary
     if (data.path1) {
       const res = await cloudinary.uploader.upload(data.path1, { folder: 'outreach' });
       updateData.msg1_image = res.secure_url;
@@ -63,22 +52,12 @@ export const contactService = {
       updateData.msg3_image = res.secure_url;
     }
 
-    // Update the record
-    await db.update(contacts)
-      .set(updateData)
-      .where(eq(contacts.id, contactId));
-
-    // Return updated record
-    return await db.select().from(contacts).where(eq(contacts.id, contactId)).then(res => res[0]);
+    await db.update(contacts).set(updateData).where(eq(contacts.id, contactId));
+    
+    const updated = await db.select().from(contacts).where(eq(contacts.id, contactId));
+    return updated[0];
   },
 
-  // 3. Get all contacts
-  async getAllContacts() {
-    return await db.select().from(contacts);
-  },
-
-  // 4. Get contacts by Niche
-  async getContactsByNiche(nicheId: number) {
-    return await db.select().from(contacts).where(eq(contacts.nicheId, nicheId));
-  }
+  async getAllContacts() { return await db.select().from(contacts); },
+  async getContactsByNiche(nicheId: number) { return await db.select().from(contacts).where(eq(contacts.nicheId, nicheId)); }
 };

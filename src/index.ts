@@ -12,13 +12,14 @@ dotenv.config();
 
 const app = express();
 
-// FIX: Changed default from '/api' to '/' to match your frontend requests (e.g., /contacts)
+// Set default prefix
 const API_PREFIX = process.env.API_PREFIX || '/';
 
 app.use(helmet());
 
+// Update CORS to allow requests from your frontend
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: process.env.CORS_ORIGIN || '*', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -27,17 +28,16 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000, 
   max: 500,
-  message: 'Too many requests from this IP, please try again after 15 minutes',
+  message: 'Too many requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Apply rate limiting
 app.use(API_PREFIX, apiLimiter);
 
-// Mount routes at the root '/' (unless API_PREFIX is set in .env)
+// Mount all routes
 app.use(API_PREFIX, apiRoutes);
 
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -47,16 +47,19 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 const PORT = process.env.PORT || 5000;
 
-testDatabaseConnection()
-  .then(() => {
-    console.log("Database connection test completed successfully.");
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
+// CRITICAL FIX FOR VERCEL: 
+// Only run app.listen locally. In production, Vercel exports the app.
+if (process.env.NODE_ENV !== 'production') {
+  testDatabaseConnection()
+    .then(() => {
+      console.log("Database connection test completed successfully.");
+      app.listen(PORT, () => {
+        console.log(`Server is running on port ${PORT}`);
+      });
+    })
+    .catch(error => {
+      console.error("Database connection test FAILED:", error);
     });
-  })
-  .catch(error => {
-    console.error("Database connection test FAILED:", error);
-    process.exit(1);
-  });
+}
 
 export default app;
