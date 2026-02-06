@@ -23,18 +23,20 @@ export const createContact = async (req: Request, res: Response) => {
 export const updateOutreach = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { msg1_text, msg2_text, msg3_text } = req.body;
+    // Extract text for all 4 messages
+    const { msg1_text, msg2_text, msg3_text, msg4_text } = req.body;
     
-    // Cast Multer files to expected object shape
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     const result = await contactService.updateOutreachAssets(Number(id), {
       msg1_text,
       msg2_text,
       msg3_text,
-      path1: files['img1']?.[0]?.path,
+      msg4_text,
+      // Map files to the correct message (Msg 1 has no image)
       path2: files['img2']?.[0]?.path,
       path3: files['img3']?.[0]?.path,
+      path4: files['img4']?.[0]?.path,
     });
 
     res.status(200).json({ success: true, data: result });

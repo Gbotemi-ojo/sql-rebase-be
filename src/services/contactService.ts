@@ -27,22 +27,20 @@ export const contactService = {
   },
 
   // Update Assets (Images)
-  async updateOutreachAssets(contactId: number, data: {
-    msg1_text?: string; path1?: string;
+async updateOutreachAssets(contactId: number, data: {
+    msg1_text?: string; 
     msg2_text?: string; path2?: string;
     msg3_text?: string; path3?: string;
+    msg4_text?: string; path4?: string;
   }) {
     const updateData: any = {
       msg1_text: data.msg1_text,
       msg2_text: data.msg2_text,
       msg3_text: data.msg3_text,
+      msg4_text: data.msg4_text,
     };
 
-    // Upload images to Cloudinary
-    if (data.path1) {
-      const res = await cloudinary.uploader.upload(data.path1, { folder: 'outreach' });
-      updateData.msg1_image = res.secure_url;
-    }
+    // Upload to Cloudinary (Only for 2, 3, 4)
     if (data.path2) {
       const res = await cloudinary.uploader.upload(data.path2, { folder: 'outreach' });
       updateData.msg2_image = res.secure_url;
@@ -50,6 +48,10 @@ export const contactService = {
     if (data.path3) {
       const res = await cloudinary.uploader.upload(data.path3, { folder: 'outreach' });
       updateData.msg3_image = res.secure_url;
+    }
+    if (data.path4) {
+      const res = await cloudinary.uploader.upload(data.path4, { folder: 'outreach' });
+      updateData.msg4_image = res.secure_url;
     }
 
     await db.update(contacts).set(updateData).where(eq(contacts.id, contactId));
