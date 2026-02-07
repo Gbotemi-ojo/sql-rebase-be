@@ -23,7 +23,6 @@ export const createContact = async (req: Request, res: Response) => {
 export const updateOutreach = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    // Extract text for all 4 messages
     const { msg1_text, msg2_text, msg3_text, msg4_text } = req.body;
     
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
@@ -33,7 +32,6 @@ export const updateOutreach = async (req: Request, res: Response) => {
       msg2_text,
       msg3_text,
       msg4_text,
-      // Map files to the correct message (Msg 1 has no image)
       path2: files['img2']?.[0]?.path,
       path3: files['img3']?.[0]?.path,
       path4: files['img4']?.[0]?.path,
@@ -43,6 +41,19 @@ export const updateOutreach = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error updating outreach:', error);
     res.status(500).json({ success: false, error: 'Failed to update outreach assets' });
+  }
+};
+
+export const updateStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    const result = await contactService.updateStatus(Number(id), status);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    console.error('Error updating status:', error);
+    res.status(500).json({ success: false, error: 'Failed to update status' });
   }
 };
 

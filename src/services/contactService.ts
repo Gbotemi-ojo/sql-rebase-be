@@ -10,7 +10,7 @@ cloudinary.config({
 });
 
 export const contactService = {
-  // Create Contact (Text Only)
+  // 1. Create Contact
   async createContact(data: { name: string; phone: string; nicheId: number; socialLink: string; notes?: string }) {
     const [result] = await db.insert(contacts).values({
       name: data.name,
@@ -20,14 +20,12 @@ export const contactService = {
       notes: data.notes,
       status: 'pending' 
     });
-
-    // Return the new contact
     const newContact = await db.select().from(contacts).where(eq(contacts.id, result.insertId));
     return newContact[0];
   },
 
-  // Update Assets (Images)
-async updateOutreachAssets(contactId: number, data: {
+  // 2. Update Assets
+  async updateOutreachAssets(contactId: number, data: {
     msg1_text?: string; 
     msg2_text?: string; path2?: string;
     msg3_text?: string; path3?: string;
@@ -40,7 +38,6 @@ async updateOutreachAssets(contactId: number, data: {
       msg4_text: data.msg4_text,
     };
 
-    // Upload to Cloudinary (Only for 2, 3, 4)
     if (data.path2) {
       const res = await cloudinary.uploader.upload(data.path2, { folder: 'outreach' });
       updateData.msg2_image = res.secure_url;
@@ -56,6 +53,13 @@ async updateOutreachAssets(contactId: number, data: {
 
     await db.update(contacts).set(updateData).where(eq(contacts.id, contactId));
     
+    const updated = await db.select().from(contacts).where(eq(contacts.id, contactId));
+    return updated[0];
+  },
+
+  // 3. Update Status
+  async updateStatus(contactId: number, status: 'pending' | 'replied' | 'ignored' | 'successful') {
+    await db.update(contacts).set({ status }).where(eq(contacts.id, contactId));
     const updated = await db.select().from(contacts).where(eq(contacts.id, contactId));
     return updated[0];
   },
