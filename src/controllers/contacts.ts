@@ -14,7 +14,11 @@ export const createContact = async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ success: true, data: result });
-  } catch (error) {
+  } catch (error: any) {
+    // NEW: Handle duplicate error gracefully
+    if (error.message === 'DUPLICATE_PHONE') {
+      return res.status(409).json({ success: false, error: 'This phone number is already saved in your leads.' });
+    }
     console.error('Error creating contact:', error);
     res.status(500).json({ success: false, error: 'Failed to create contact' });
   }

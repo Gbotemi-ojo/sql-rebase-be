@@ -10,8 +10,15 @@ cloudinary.config({
 });
 
 export const contactService = {
-  // 1. Create Contact
+  // 1. Create Contact (With Duplicate Check)
   async createContact(data: { name: string; phone: string; nicheId: number; socialLink: string; notes?: string }) {
+    
+    // NEW: Check if phone number already exists in the database
+    const existing = await db.select().from(contacts).where(eq(contacts.phoneNumber, data.phone));
+    if (existing.length > 0) {
+      throw new Error('DUPLICATE_PHONE');
+    }
+
     const [result] = await db.insert(contacts).values({
       name: data.name,
       phoneNumber: data.phone,
@@ -20,6 +27,7 @@ export const contactService = {
       notes: data.notes,
       status: 'pending' 
     });
+    
     const newContact = await db.select().from(contacts).where(eq(contacts.id, result.insertId));
     return newContact[0];
   },
