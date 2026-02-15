@@ -10,14 +10,10 @@ cloudinary.config({
 });
 
 export const contactService = {
-  // 1. Create Contact (With Duplicate Check)
+  // 1. Create Contact
   async createContact(data: { name: string; phone: string; nicheId: number; socialLink: string; notes?: string }) {
-    
-    // NEW: Check if phone number already exists in the database
     const existing = await db.select().from(contacts).where(eq(contacts.phoneNumber, data.phone));
-    if (existing.length > 0) {
-      throw new Error('DUPLICATE_PHONE');
-    }
+    if (existing.length > 0) throw new Error('DUPLICATE_PHONE');
 
     const [result] = await db.insert(contacts).values({
       name: data.name,
@@ -34,33 +30,19 @@ export const contactService = {
 
   // 2. Update Assets
   async updateOutreachAssets(contactId: number, data: {
-    msg1_text?: string; 
-    msg2_text?: string; path2?: string;
-    msg3_text?: string; path3?: string;
-    msg4_text?: string; path4?: string;
+    msg1_text?: string; msg2_text?: string; path2?: string;
+    msg3_text?: string; path3?: string; msg4_text?: string; path4?: string;
   }) {
     const updateData: any = {
-      msg1_text: data.msg1_text,
-      msg2_text: data.msg2_text,
-      msg3_text: data.msg3_text,
-      msg4_text: data.msg4_text,
+      msg1_text: data.msg1_text, msg2_text: data.msg2_text,
+      msg3_text: data.msg3_text, msg4_text: data.msg4_text,
     };
 
-    if (data.path2) {
-      const res = await cloudinary.uploader.upload(data.path2, { folder: 'outreach' });
-      updateData.msg2_image = res.secure_url;
-    }
-    if (data.path3) {
-      const res = await cloudinary.uploader.upload(data.path3, { folder: 'outreach' });
-      updateData.msg3_image = res.secure_url;
-    }
-    if (data.path4) {
-      const res = await cloudinary.uploader.upload(data.path4, { folder: 'outreach' });
-      updateData.msg4_image = res.secure_url;
-    }
+    if (data.path2) updateData.msg2_image = (await cloudinary.uploader.upload(data.path2, { folder: 'outreach' })).secure_url;
+    if (data.path3) updateData.msg3_image = (await cloudinary.uploader.upload(data.path3, { folder: 'outreach' })).secure_url;
+    if (data.path4) updateData.msg4_image = (await cloudinary.uploader.upload(data.path4, { folder: 'outreach' })).secure_url;
 
     await db.update(contacts).set(updateData).where(eq(contacts.id, contactId));
-    
     const updated = await db.select().from(contacts).where(eq(contacts.id, contactId));
     return updated[0];
   },
@@ -68,6 +50,13 @@ export const contactService = {
   // 3. Update Status
   async updateStatus(contactId: number, status: 'pending' | 'replied' | 'ignored' | 'successful') {
     await db.update(contacts).set({ status }).where(eq(contacts.id, contactId));
+    const updated = await db.select().from(contacts).where(eq(contacts.id, contactId));
+    return updated[0];
+  },
+
+  // 4. NEW: Update Niche (Category)
+  async updateNiche(contactId: number, nicheId: number) {
+    await db.update(contacts).set({ nicheId }).where(eq(contacts.id, contactId));
     const updated = await db.select().from(contacts).where(eq(contacts.id, contactId));
     return updated[0];
   },
